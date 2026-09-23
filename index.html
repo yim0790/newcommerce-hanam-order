@@ -59,17 +59,20 @@ button{font-family:inherit;cursor:pointer}
 .big.ghost{background:#fff;color:var(--act);border:1.5px solid var(--act)}
 
 /* ===== 메인 ===== */
-.hero{background:#fff;border-radius:14px;padding:20px 18px;margin-bottom:12px;border:1px solid var(--line)}
-.hero h2{margin:0 0 6px;font-size:20px;letter-spacing:-.4px}
-.hero p{margin:0;font-size:13.5px;color:var(--sub)}
-.due{display:inline-block;margin-top:10px;background:#FBEFEF;color:var(--red);
-     font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:7px}
-.due.open{background:#EEF3FF;color:var(--act)}
-.gate{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);
-      border-radius:14px;padding:17px 16px;margin-bottom:10px}
-.gate b{display:block;font-size:16.5px;color:var(--ink);margin-bottom:3px}
-.gate span{font-size:13px;color:var(--sub)}
-.gate .go{float:right;color:var(--act);font-size:19px;line-height:1.6}
+.home{padding:18px 14px}
+.hi{font-size:15px;color:var(--sub);margin:2px 0 16px;line-height:1.6}
+.pick{display:block;width:100%;text-align:left;border:1.5px solid var(--line);background:#fff;
+      border-radius:14px;padding:17px 16px 16px;margin-bottom:12px;font-family:inherit;position:relative}
+.pick::after{content:'›';position:absolute;right:16px;top:20px;font-size:26px;color:#98A2B3}
+.pick .ti{font-size:17px;font-weight:700;color:var(--ink);padding-right:20px}
+.pick .de{font-size:12.5px;color:var(--sub);margin-top:5px;line-height:1.6;padding-right:20px}
+.pick .tag{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;
+           margin-top:9px;background:#EEF2FE;color:var(--act)}
+.pick.acc{border-color:var(--act)}
+.pick.acc .tag{background:var(--act);color:#fff}
+.dead{background:#FEF3F2;border:1px solid #FDA29B;border-radius:10px;padding:11px 13px;
+      font-size:12.5px;color:#912018;margin-top:4px;line-height:1.6}
+.mfoot{text-align:center;font-size:11.5px;color:#98A2B3}
 
 /* ===== 전략 뷰어 ===== */
 .sldwrap{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -187,23 +190,21 @@ button{font-family:inherit;cursor:pointer}
 
   <!-- 메인 -->
   <div class="view" id="vMain">
-    <div class="bd">
-      <div class="hero">
-        <h2 id="mTitle">2026년 9월 선주문</h2>
-        <p id="mSub">아모레퍼시픽 뉴커머스 하남점</p>
-        <div class="due" id="mDue">마감 9월 30일(화) 18시</div>
-      </div>
-      <button class="gate" id="gSlide" type="button">
-        <span class="go">›</span>
-        <b>9월 선주문 전략 보기</b>
-        <span>품목별 소비자가 · 주문단위 · 사은품을 게시물 그대로 넘겨 봅니다</span>
+    <div class="bd home">
+      <p class="hi">무엇을 하시겠어요?</p>
+      <button class="pick" id="gSlide" type="button">
+        <div class="ti" id="gSlideTi">선주문 전략 보기</div>
+        <div class="de">품목별 소비자가 · 주문단위 · 사은품을<br>게시물 그대로 넘겨 봅니다</div>
+        <span class="tag" id="gSlideTag">13장</span>
       </button>
-      <button class="gate" id="gOrder" type="button">
-        <span class="go">›</span>
-        <b>주문 입력하기</b>
-        <span id="gOrderSub">명단에서 본인을 고르고 수량을 넣습니다</span>
+      <button class="pick acc" id="gOrder" type="button">
+        <div class="ti">주문 입력하기</div>
+        <div class="de">본인 이름을 고르고 품목별 수량을 넣습니다<br>마감 전까지 수정할 수 있습니다</div>
+        <span class="tag" id="gOrderTag">—</span>
       </button>
+      <div class="dead" id="mDue"></div>
     </div>
+    <div class="ft mfoot">문의는 점 담당자에게 해주세요</div>
   </div>
 
   <!-- 전략 -->
@@ -277,7 +278,7 @@ button{font-family:inherit;cursor:pointer}
 // ===================================================================
 // Apps Script 웹앱 주소 — 설치가이드 3단계에서 받은 주소를 여기 한 줄만 넣습니다
 // ===================================================================
-var API_URL = '';
+var API_URL = 'https://script.google.com/macros/s/AKfycbwhYOLnJuTYOGp7HEQovyOs-F6LCrJj062CGXAUzqjqRAO0N7EuVHVqCuSWAUCnh7l_/exec';
 
 var SLIDES = 13;                 // slides/s01.jpg ~ s13.jpg
 var CONF = {}, ROSTER = [], ITEMS = [], GIFTS = [], ENTRIES = {};
@@ -366,24 +367,36 @@ function fail(msg) {
 }
 
 function ready() {
-  $('mTitle').textContent = CONF['제목'] || '선주문';
-  $('mSub').textContent = CONF['부제'] || '';
-  $('hdT').textContent = CONF['제목'] || '선주문';
+  var title = CONF['제목'] || '선주문';
+  $('hdT').textContent = title;
   $('hdS').textContent = CONF['부제'] || '';
-  HEAD.vMain = [CONF['제목'] || '선주문', CONF['부제'] || '', false];
-  HEAD.vDone = ['저장 완료', CONF['제목'] || '', false];
+  HEAD.vMain = [title, CONF['부제'] || '', false];
+  HEAD.vDone = ['저장 완료', title, false];
+
+  // 제목에서 "9월" 을 뽑아 전략 카드에 쓴다 — 다음 달엔 설정 탭만 고치면 따라온다
+  var mm = String(title).match(/(\d{1,2})\s*월/);
+  $('gSlideTi').textContent = (mm ? mm[1] + '월 ' : '') + '선주문 전략 보기';
+  $('gSlideTag').textContent = SLIDES + '장';
+  HEAD.vSlide = [(mm ? mm[1] + '월 ' : '') + '선주문 전략', '넘겨서 보세요', true];
 
   closed = isClosed();
   var due = $('mDue');
-  if (closed) { due.className = 'due'; due.textContent = CONF['마감후문구'] || '선주문이 마감되었습니다.'; }
-  else { due.className = 'due open'; due.textContent = CONF['마감문구'] || ''; }
+  if (closed) {
+    due.className = 'dead';
+    due.textContent = CONF['마감후문구'] || '선주문이 마감되었습니다.';
+  } else {
+    due.className = 'dead';
+    due.innerHTML = esc(CONF['마감문구'] || '') + '<br>마감 후에는 저장되지 않습니다';
+  }
 
-  var n = Object.keys(ENTRIES).length;
-  $('gOrderSub').textContent = '명단 ' + ROSTER.length + '명 중 ' + n + '명 입력 · 본인을 고르고 수량을 넣습니다';
-
+  countTag();
   buildSlides(); buildRoster();
   paint('vMain');
   history.replaceState({ v: 'vMain' }, '');
+}
+
+function countTag() {
+  $('gOrderTag').textContent = ROSTER.length + '명 중 ' + Object.keys(ENTRIES).length + '명 입력';
 }
 
 function isClosed() {
@@ -738,8 +751,7 @@ $('oSave').onclick = function () {
       ENTRIES[picked.name] = { savedAt: d.savedAt, qty: send };
       showDone(d, send);
       render($('rSrch').value.trim());
-      var cnt = Object.keys(ENTRIES).length;
-      $('gOrderSub').textContent = '명단 ' + ROSTER.length + '명 중 ' + cnt + '명 입력 · 본인을 고르고 수량을 넣습니다';
+      countTag();
       go('vDone');
     })
     .catch(function () {
