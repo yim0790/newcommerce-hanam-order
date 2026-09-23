@@ -105,6 +105,7 @@ button{font-family:inherit;cursor:pointer}
 .nm{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);
     border-radius:10px;padding:9px 10px 9px 14px;margin-bottom:7px;font-size:15.5px;font-weight:600}
 .nm .nmn{flex:0 0 auto}
+.nm .cd{flex:0 0 auto;font-size:11px;color:#fff;font-weight:700;background:var(--bar);padding:2px 7px;border-radius:5px;letter-spacing:.3px}
 .nm .pt{flex:0 0 auto;font-size:11.5px;color:var(--sub);font-weight:500;background:#EEF1F5;padding:2px 7px;border-radius:5px}
 .nm .done{flex:0 0 auto;font-size:11px;color:var(--gold);font-weight:700;background:#FBF3E4;padding:3px 7px;border-radius:5px}
 .nm .go{flex:0 0 auto;margin-left:auto;border:0;border-radius:8px;background:var(--act);color:#fff;
@@ -228,7 +229,7 @@ button{font-family:inherit;cursor:pointer}
   <!-- 명단 -->
   <div class="view" id="vRoster">
     <div class="bd">
-      <input class="srch" id="rSrch" placeholder="이름 검색" autocomplete="off">
+      <input class="srch" id="rSrch" placeholder="이름 또는 코드 검색" autocomplete="off">
       <div id="rList"></div>
     </div>
   </div>
@@ -322,7 +323,8 @@ function paint(v) {
   if (h) {
     $('hdT').textContent = h[0];
     $('hdS').textContent = (v === 'vOrder' && picked)
-      ? (picked.name + ' 님' + (picked.part ? ' · ' + picked.part + '파트' : '') + ' · ' + (CONF['마감문구'] || ''))
+      ? (picked.name + ' 님' + (DUPNAME[picked.name] ? '(' + tail4(picked.code) + ')' : '') +
+         (picked.part ? ' · ' + picked.part + '파트' : '') + ' · ' + (CONF['마감문구'] || ''))
       : (h[1] || CONF['부제'] || '');
     $('hd').className = 'hd' + (h[2] ? ' has-back' : '');
   }
@@ -492,30 +494,42 @@ $('lbRot').onclick = function () { lbRot = (lbRot + 90) % 360; lbZoom = 1; drawL
 // 명단
 // ===================================================================
 function buildRoster() {
+  markDup();
   render('');
   $('rSrch').oninput = function () { render(this.value.trim()); };
 }
+// 같은 이름이 둘 이상이면 코드 뒤 4자리를 붙여 구분한다
+var DUPNAME = {};
+function markDup() {
+  var c = {};
+  for (var i = 0; i < ROSTER.length; i++) c[ROSTER[i].name] = (c[ROSTER[i].name] || 0) + 1;
+  DUPNAME = {};
+  for (var k in c) if (c[k] > 1) DUPNAME[k] = true;
+}
+function tail4(code) { return String(code || '').slice(-4); }
+
 function render(q) {
   var h = '', n = 0;
   for (var i = 0; i < ROSTER.length; i++) {
     var p = ROSTER[i];
-    if (q && p.name.indexOf(q) < 0) continue;
+    if (q && p.name.indexOf(q) < 0 && String(p.code).indexOf(q) < 0) continue;
     n++;
-    var done = ENTRIES[p.name];
+    var done = ENTRIES[p.code];
     h += '<div class="nm">' +
          '<span class="nmn">' + esc(p.name) + '</span>' +
+         (DUPNAME[p.name] ? '<span class="cd">' + esc(tail4(p.code)) + '</span>' : '') +
          (p.part ? '<span class="pt">' + esc(p.part) + '파트</span>' : '') +
          (done ? '<span class="done">입력완료</span>' : '') +
-         '<button class="go' + (done ? ' re' : '') + '" type="button" data-n="' + esc(p.name) + '">' +
+         '<button class="go' + (done ? ' re' : '') + '" type="button" data-c="' + esc(p.code) + '">' +
          (done ? '수정' : '선주문') + '</button>' +
          '</div>';
   }
   $('rList').innerHTML = n ? h : '<div class="empty">찾는 이름이 없습니다.<br>관리자에게 알려주세요.</div>';
-  var bs = $('rList').querySelectorAll('button[data-n]');
+  var bs = $('rList').querySelectorAll('button[data-c]');
   for (var k = 0; k < bs.length; k++) {
     bs[k].onclick = function () {
-      var nm = this.getAttribute('data-n');
-      for (var j = 0; j < ROSTER.length; j++) if (ROSTER[j].name === nm) picked = ROSTER[j];
+      var cd = this.getAttribute('data-c');
+      for (var j = 0; j < ROSTER.length; j++) if (ROSTER[j].code === cd) picked = ROSTER[j];
       openOrder();
       go('vOrder');
     };
@@ -527,7 +541,7 @@ function render(q) {
 // ===================================================================
 function openOrder() {
   qty = {}; dirOpen = {};
-  var prev = ENTRIES[picked.name];
+  var prev = ENTRIES[picked.code];
   for (var i = 0; i < ITEMS.length; i++) {
     qty[ITEMS[i].id] = prev ? (Number(prev.qty[ITEMS[i].id]) || 0) : 0;
   }
@@ -739,13 +753,13 @@ $('oSave').onclick = function () {
   fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ name: picked.name, qty: send })
+    body: JSON.stringify({ code: picked.code, qty: send })
   })
     .then(function (r) { return r.json(); })
     .then(function (d) {
       btn.disabled = false; btn.textContent = '저장하기';
       if (!d.ok) { showErr(d.error || '저장하지 못했습니다.'); return; }
-      ENTRIES[picked.name] = { savedAt: d.savedAt, qty: send };
+      ENTRIES[picked.code] = { savedAt: d.savedAt, qty: send };
       showDone(d, send);
       render($('rSrch').value.trim());
       countTag();
