@@ -1,0 +1,786 @@
+<!-- 선주문 취합 웹 — 카운셀러가 휴대폰으로 전략을 보고 주문 수량을 입력하는 화면 한 장 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2026년 9월 선주문 · 하남점</title>
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="9월 전략 선주문 · 하남점">
+<meta property="og:description" content="선주문은 9월30일 까지입니다.">
+<meta property="og:image" content="https://yim0790.github.io/newcommerce-hanam-order/icons/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://yim0790.github.io/newcommerce-hanam-order/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/gift-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon-180.png">
+
+<style>
+:root{
+  --navy:#16324F;   /* 읽는 것 — 상단 헤더 */
+  --bar:#24547F;    /* 제품 구분 — 제품명 바 */
+  --act:#2B5BD7;    /* 누르는 것 — 버튼 */
+  --gold:#B7791F;   /* 받는 것 — 혜택·판촉 */
+  --red:#B42318;    /* 막는 것 — 오류·마감 */
+  --bg:#EEF1F5;     /* 바탕 */
+  --ink:#1A2433;
+  --sub:#5A6B80;
+  --line:#D9DEE6;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",
+              "Noto Sans KR",system-ui,sans-serif;
+  font-size:15px; line-height:1.5;
+  -webkit-text-size-adjust:100%;
+}
+button{font-family:inherit;cursor:pointer}
+
+/* ===== 뼈대 ===== */
+.app{max-width:560px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;background:var(--bg)}
+.hd{background:var(--navy);color:#fff;padding:14px 16px calc(14px + env(safe-area-inset-top,0)) 16px;
+    padding-top:calc(14px + env(safe-area-inset-top,0));position:sticky;top:0;z-index:20}
+.hd h1{margin:0;font-size:17px;font-weight:700;letter-spacing:-.3px}
+.hd .sub{margin-top:3px;font-size:12.5px;color:#BFD0E2}
+.hd .back{background:none;border:0;color:#BFD0E2;font-size:13px;padding:0 0 6px;display:none}
+.hd.has-back .back{display:block}
+.bd{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px 16px}
+.ft{padding:10px 16px calc(10px + env(safe-area-inset-bottom,0));background:#fff;border-top:1px solid var(--line)}
+.view{display:none}
+.view.on{display:flex;flex-direction:column;flex:1;min-height:0}
+
+/* ===== 큰 버튼 ===== */
+.big{width:100%;border:0;border-radius:12px;padding:15px;font-size:16px;font-weight:700;color:#fff;background:var(--act)}
+.big:disabled{background:#AEB8C6}
+.big.ghost{background:#fff;color:var(--act);border:1.5px solid var(--act)}
+
+/* ===== 메인 ===== */
+.hero{background:#fff;border-radius:14px;padding:20px 18px;margin-bottom:12px;border:1px solid var(--line)}
+.hero h2{margin:0 0 6px;font-size:20px;letter-spacing:-.4px}
+.hero p{margin:0;font-size:13.5px;color:var(--sub)}
+.due{display:inline-block;margin-top:10px;background:#FBEFEF;color:var(--red);
+     font-size:12.5px;font-weight:700;padding:5px 10px;border-radius:7px}
+.due.open{background:#EEF3FF;color:var(--act)}
+.gate{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);
+      border-radius:14px;padding:17px 16px;margin-bottom:10px}
+.gate b{display:block;font-size:16.5px;color:var(--ink);margin-bottom:3px}
+.gate span{font-size:13px;color:var(--sub)}
+.gate .go{float:right;color:var(--act);font-size:19px;line-height:1.6}
+
+/* ===== 전략 뷰어 ===== */
+.sldwrap{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.sld{width:100%;display:block;background:#fff;aspect-ratio:16/9;object-fit:contain}
+.sldnav{display:flex;align-items:center;gap:8px;margin-top:10px}
+.sldnav button{flex:0 0 auto;border:1px solid var(--act);background:#fff;color:var(--act);
+               border-radius:10px;padding:10px 14px;font-size:15px;font-weight:700}
+.sldnav button:disabled{border-color:var(--line);color:#AEB8C6}
+.sldnav .pg{flex:1;text-align:center;font-size:13.5px;color:var(--sub);font-weight:600}
+.dots{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:10px}
+.dots i{width:7px;height:7px;border-radius:50%;background:#C6CEDA;display:block}
+.dots i.on{background:var(--act);width:18px;border-radius:4px}
+.tip{text-align:center;font-size:12px;color:var(--sub);margin-top:8px}
+
+/* ===== 라이트박스 ===== */
+.lb{position:fixed;inset:0;background:rgba(10,16,26,.94);z-index:60;display:none;flex-direction:column}
+.lb.on{display:flex}
+.lbtop{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;color:#fff;font-size:13px}
+.lbtop button{background:none;border:0;color:#fff;font-size:15px;padding:6px 8px}
+.lbbody{flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:6px}
+.lbbody img{max-width:100%;max-height:100%;height:auto;transform-origin:center center;transition:transform .15s}
+.lbctl{display:flex;gap:7px;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0));flex-wrap:wrap;justify-content:center}
+.lbctl button{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;
+              border-radius:9px;padding:9px 13px;font-size:14px;min-width:46px}
+.lbctl .lv{color:#fff;font-size:14px;padding:9px 4px;min-width:56px;text-align:center}
+
+/* ===== 명단 ===== */
+.srch{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px 13px;font-size:15px;
+      margin-bottom:10px;background:#fff;font-family:inherit}
+.nm{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);
+    border-radius:10px;padding:13px 14px;margin-bottom:7px;font-size:15.5px;font-weight:600;width:100%;text-align:left}
+.nm.on{border-color:var(--act);background:#F4F7FF;box-shadow:inset 0 0 0 1px var(--act)}
+.nm .pt{font-size:11.5px;color:var(--sub);font-weight:500;background:#EEF1F5;padding:2px 7px;border-radius:5px}
+.nm .done{margin-left:auto;font-size:11.5px;color:var(--gold);font-weight:700;background:#FBF3E4;padding:3px 8px;border-radius:5px}
+.empty{text-align:center;color:var(--sub);font-size:14px;padding:26px 0}
+
+/* ===== 주문 입력 ===== */
+.notice{background:#FBF3E4;border:1px solid #E8D6B0;border-radius:10px;padding:11px 13px;
+        font-size:13px;color:#7A5410;margin-bottom:11px}
+.item{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:11px;overflow:hidden}
+.item .bar{background:var(--bar);color:#fff;padding:10px 13px;display:flex;align-items:center;gap:7px}
+.item .bar .dia{flex:0 0 auto;font-size:11px;opacity:.9}
+.item .bar .nmx{flex:1;min-width:0;font-size:15px;font-weight:700;letter-spacing:-.2px}
+.item .meta{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:9px 13px 0}
+.item .meta .u{font-size:12.5px;color:var(--sub);min-width:0}
+.item .meta .u b{color:var(--ink);white-space:nowrap}
+.item .meta .pr{flex:0 0 auto;font-size:15px;font-weight:700;color:var(--ink)}
+.qty{display:flex;flex-wrap:wrap;gap:6px;padding:10px 13px 11px}
+.qty button{flex:0 0 auto;min-width:42px;border:1px solid var(--line);background:#fff;color:var(--ink);
+            border-radius:9px;padding:8px 10px;font-size:14px;font-weight:700}
+.qty button.on{background:var(--act);border-color:var(--act);color:#fff}
+.qty button.dir{min-width:auto;padding:8px 11px;font-size:13px;color:var(--act);border-color:#BFCDF4;font-weight:600}
+.qty button.dir.on{background:var(--act);color:#fff;border-color:var(--act)}
+.dirp{display:none;padding:0 13px 12px}
+.dirp.on{display:block}
+.dirp .box{background:#F4F7FF;border:1px solid #BFCDF4;border-radius:10px;padding:11px}
+.dirp .line{display:flex;gap:7px;align-items:center}
+.dirp input{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:10px;font-size:16px;
+            text-align:center;font-weight:700;font-family:inherit}
+.dirp .pm{flex:0 0 auto;width:44px;background:var(--act);color:#fff;border:0;border-radius:8px;
+          font-size:19px;font-weight:700;padding:9px 0}
+.dirp .hint{font-size:12px;color:var(--sub);margin-top:7px}
+.dirp .hint.bad{color:var(--red);font-weight:600}
+.gift{margin:0 13px 12px;background:#FBF3E4;border:1px solid #E8D6B0;border-radius:10px;padding:10px 12px;font-size:13.5px;color:#7A5410}
+.gift .gh{font-size:11.5px;font-weight:700;color:var(--gold);letter-spacing:.2px;margin-bottom:5px}
+.gift b{color:#5E3F08}
+.gift.off{background:#F4F6F9;border-color:var(--line);color:var(--sub)}
+.gift.off .gh{color:var(--sub)}
+.sum{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:2px}
+.sum .r{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:3px 0;color:var(--sub)}
+.sum .r span:last-child{color:var(--ink);font-weight:600}
+.sum .r.tot{border-top:1px solid var(--line);margin-top:7px;padding-top:9px;font-size:16px;font-weight:700;color:var(--ink)}
+.sum .r.tot span:last-child{color:var(--act);font-size:17px}
+.err{background:#FBEFEF;border:1px solid #EFC9C6;color:var(--red);border-radius:10px;
+     padding:11px 13px;font-size:13px;margin-top:10px;white-space:pre-line;display:none}
+.err.on{display:block}
+
+/* ===== 완료 ===== */
+.okwrap{text-align:center;padding:14px 0 0}
+.okic{width:58px;height:58px;border-radius:50%;background:#E8F3EC;color:#1E7B45;
+      font-size:29px;line-height:58px;margin:0 auto 12px}
+.okwrap h3{margin:0 0 5px;font-size:19px}
+.okwrap .t{font-size:13px;color:var(--sub);margin-bottom:16px;line-height:1.6}
+.recap{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px;text-align:left;margin-bottom:11px}
+.recap .rt{font-size:11.5px;font-weight:700;color:var(--sub);letter-spacing:.2px;margin:0 0 8px}
+.recap .r{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:4px 0}
+.recap .r b{flex:0 0 auto}
+.recap .r.tot{border-top:1px solid var(--line);margin-top:6px;padding-top:9px;font-weight:700}
+.recap.g{background:#FBF3E4;border-color:#E8D6B0;color:#7A5410}
+.recap.g .rt{color:var(--gold)}
+.recap.g .r b{color:#5E3F08}
+
+/* ===== 상태 ===== */
+.load{text-align:center;padding:50px 0;color:var(--sub);font-size:14px}
+.fail{background:#FBEFEF;border:1px solid #EFC9C6;color:var(--red);border-radius:12px;
+      padding:15px;font-size:13.5px;white-space:pre-line;line-height:1.6}
+.toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);background:rgba(20,28,40,.93);
+       color:#fff;padding:11px 17px;border-radius:9px;font-size:13.5px;z-index:70;display:none;max-width:88%;text-align:center}
+.toast.on{display:block}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="hd" id="hd">
+    <button class="back" id="back" type="button">← 뒤로</button>
+    <h1 id="hdT">2026년 9월 선주문</h1>
+    <div class="sub" id="hdS">아모레퍼시픽 뉴커머스 하남점</div>
+  </div>
+
+  <!-- 로딩 / 오류 -->
+  <div class="view on" id="vLoad">
+    <div class="bd"><div class="load" id="loadMsg">불러오는 중입니다…</div></div>
+  </div>
+
+  <!-- 메인 -->
+  <div class="view" id="vMain">
+    <div class="bd">
+      <div class="hero">
+        <h2 id="mTitle">2026년 9월 선주문</h2>
+        <p id="mSub">아모레퍼시픽 뉴커머스 하남점</p>
+        <div class="due" id="mDue">마감 9월 30일(화) 18시</div>
+      </div>
+      <button class="gate" id="gSlide" type="button">
+        <span class="go">›</span>
+        <b>9월 선주문 전략 보기</b>
+        <span>품목별 소비자가 · 주문단위 · 사은품을 게시물 그대로 넘겨 봅니다</span>
+      </button>
+      <button class="gate" id="gOrder" type="button">
+        <span class="go">›</span>
+        <b>주문 입력하기</b>
+        <span id="gOrderSub">명단에서 본인을 고르고 수량을 넣습니다</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 전략 -->
+  <div class="view" id="vSlide">
+    <div class="bd">
+      <div class="sldwrap"><img class="sld" id="sImg" alt="전략 슬라이드"></div>
+      <div class="sldnav">
+        <button id="sPrev" type="button">‹ 이전</button>
+        <div class="pg" id="sPg">1 / 13</div>
+        <button id="sNext" type="button">다음 ›</button>
+      </div>
+      <div class="dots" id="sDots"></div>
+      <div class="tip">슬라이드를 누르면 크게 볼 수 있습니다</div>
+    </div>
+    <div class="ft"><button class="big ghost" id="sToOrder" type="button">주문 입력하러 가기</button></div>
+  </div>
+
+  <!-- 명단 -->
+  <div class="view" id="vRoster">
+    <div class="bd">
+      <input class="srch" id="rSrch" placeholder="이름 검색" autocomplete="off">
+      <div id="rList"></div>
+    </div>
+    <div class="ft"><button class="big" id="rGo" type="button" disabled>본인을 선택해주세요</button></div>
+  </div>
+
+  <!-- 주문 -->
+  <div class="view" id="vOrder">
+    <div class="bd">
+      <div class="notice" id="oNotice" style="display:none"></div>
+      <div id="oItems"></div>
+      <div class="sum" id="oSum"></div>
+      <div class="err" id="oErr"></div>
+    </div>
+    <div class="ft"><button class="big" id="oSave" type="button">저장하기</button></div>
+  </div>
+
+  <!-- 완료 -->
+  <div class="view" id="vDone">
+    <div class="bd">
+      <div class="okwrap">
+        <div class="okic">✓</div>
+        <h3 id="dTitle">저장했습니다</h3>
+        <div class="t" id="dWhen"></div>
+        <div class="recap" id="dOrder"></div>
+        <div class="recap g" id="dGift"></div>
+      </div>
+    </div>
+    <div class="ft"><button class="big" id="dHome" type="button">처음으로 가기</button></div>
+  </div>
+</div>
+
+<!-- 슬라이드 확대 -->
+<div class="lb" id="lb">
+  <div class="lbtop">
+    <span id="lbPg">1 / 13</span>
+    <button id="lbX" type="button">닫기 ✕</button>
+  </div>
+  <div class="lbbody" id="lbBody"><img id="lbImg" alt=""></div>
+  <div class="lbctl">
+    <button id="lbOut" type="button">−</button>
+    <span class="lv" id="lbLv">100%</span>
+    <button id="lbIn" type="button">＋</button>
+    <button id="lbRot" type="button">↻ 돌려보기</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================================================================
+// Apps Script 웹앱 주소 — 설치가이드 3단계에서 받은 주소를 여기 한 줄만 넣습니다
+// ===================================================================
+var API_URL = '';
+
+var SLIDES = 13;                 // slides/s01.jpg ~ s13.jpg
+var CONF = {}, ROSTER = [], ITEMS = [], GIFTS = [], ENTRIES = {};
+var picked = null;               // 선택한 사람 {name, part}
+var qty = {};                    // {품목ID: 수량}
+var dirOpen = {};                // 직접입력 패널 열림 상태
+var closed = false;              // 마감 여부
+var si = 0;                      // 슬라이드 번호
+var lbZoom = 1, lbRot = 0;
+
+var $ = function (id) { return document.getElementById(id); };
+var won = function (n) { return (n || 0).toLocaleString('ko-KR'); };
+function esc(s) {
+  return String(s === null || s === undefined ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+var toastT;
+function toast(msg) {
+  var t = $('toast'); t.textContent = msg; t.className = 'toast on';
+  clearTimeout(toastT); toastT = setTimeout(function () { t.className = 'toast'; }, 2600);
+}
+
+// ===== 화면 전환 + 안드로이드 뒤로가기 =====
+var VIEWS = ['vLoad', 'vMain', 'vSlide', 'vRoster', 'vOrder', 'vDone'];
+var cur = 'vLoad';
+var HEAD = {
+  vMain:   ['2026년 9월 선주문', '아모레퍼시픽 뉴커머스 하남점', false],
+  vSlide:  ['9월 선주문 전략', '넘겨서 보세요', true],
+  vRoster: ['본인 선택', '명단에서 이름을 찾아주세요', true],
+  vOrder:  ['주문 입력', '', true],
+  vDone:   ['저장 완료', '2026년 9월 선주문', false]
+};
+function paint(v) {
+  for (var i = 0; i < VIEWS.length; i++) $(VIEWS[i]).className = 'view' + (VIEWS[i] === v ? ' on' : '');
+  cur = v;
+  var h = HEAD[v];
+  if (h) {
+    $('hdT').textContent = h[0];
+    $('hdS').textContent = (v === 'vOrder' && picked)
+      ? (picked.name + ' 님' + (picked.part ? ' · ' + picked.part + '파트' : '') + ' · ' + (CONF['마감문구'] || ''))
+      : (h[1] || CONF['부제'] || '');
+    $('hd').className = 'hd' + (h[2] ? ' has-back' : '');
+  }
+  $('bd') && 0;
+  var bd = $(v).querySelector('.bd');
+  if (bd) bd.scrollTop = 0;
+}
+function go(v) {
+  if (v === cur) return;
+  history.pushState({ v: v }, '');
+  paint(v);
+}
+window.addEventListener('popstate', function () {
+  if ($('lb').className.indexOf('on') > -1) { closeLb(); return; }
+  if (cur === 'vMain' || cur === 'vLoad') { paint('vMain'); history.pushState({ v: 'vMain' }, ''); return; }
+  if (cur === 'vDone') { paint('vMain'); return; }
+  if (cur === 'vOrder') { paint('vRoster'); return; }
+  paint('vMain');
+});
+
+// ===================================================================
+// 불러오기
+// ===================================================================
+function boot() {
+  if (!API_URL) {
+    $('loadMsg').outerHTML = '<div class="fail">API 주소가 설정되지 않았습니다.\n\n' +
+      'index.html 의 API_URL 에 Apps Script 웹앱 주소를 넣어주세요.\n설치가이드 3단계를 참고하세요.</div>';
+    return;
+  }
+  fetch(API_URL, { method: 'GET' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.ok) { fail(d.error || '알 수 없는 오류'); return; }
+      CONF = d.config || {}; ROSTER = d.roster || []; ITEMS = d.items || [];
+      GIFTS = d.gifts || []; ENTRIES = d.entries || {};
+      ready();
+    })
+    .catch(function () {
+      fail('서버에 연결하지 못했습니다.\n\n잠시 후 다시 열어보시고, 계속 안 되면 관리자에게 알려주세요.');
+    });
+}
+function fail(msg) {
+  $('loadMsg').outerHTML = '<div class="fail">' + esc(msg) + '</div>';
+}
+
+function ready() {
+  $('mTitle').textContent = CONF['제목'] || '선주문';
+  $('mSub').textContent = CONF['부제'] || '';
+  $('hdT').textContent = CONF['제목'] || '선주문';
+  $('hdS').textContent = CONF['부제'] || '';
+  HEAD.vMain = [CONF['제목'] || '선주문', CONF['부제'] || '', false];
+  HEAD.vDone = ['저장 완료', CONF['제목'] || '', false];
+
+  closed = isClosed();
+  var due = $('mDue');
+  if (closed) { due.className = 'due'; due.textContent = CONF['마감후문구'] || '선주문이 마감되었습니다.'; }
+  else { due.className = 'due open'; due.textContent = CONF['마감문구'] || ''; }
+
+  var n = Object.keys(ENTRIES).length;
+  $('gOrderSub').textContent = '명단 ' + ROSTER.length + '명 중 ' + n + '명 입력 · 본인을 고르고 수량을 넣습니다';
+
+  buildSlides(); buildRoster();
+  paint('vMain');
+  history.replaceState({ v: 'vMain' }, '');
+}
+
+function isClosed() {
+  var s = CONF['마감일시'];
+  if (!s) return false;
+  var m = String(s).match(/^(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})[ T]+(\d{1,2}):(\d{2})/);
+  if (!m) return false;
+  return new Date() > new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], 0);
+}
+
+// ===================================================================
+// 전략 슬라이드 — 보고 있는 장과 다음 장만 받는다
+// ===================================================================
+var loaded = {};
+function src(i) { return 'slides/s' + (i < 9 ? '0' : '') + (i + 1) + '.jpg'; }
+function preload(i) {
+  if (i < 0 || i >= SLIDES || loaded[i]) return;
+  loaded[i] = true;
+  var im = new Image(); im.src = src(i);
+}
+function buildSlides() {
+  var h = '';
+  for (var i = 0; i < SLIDES; i++) h += '<i data-i="' + i + '"></i>';
+  $('sDots').innerHTML = h;
+  showSlide(0);
+}
+function showSlide(i) {
+  if (i < 0) i = 0;
+  if (i > SLIDES - 1) i = SLIDES - 1;
+  si = i;
+  $('sImg').src = src(i);
+  loaded[i] = true;
+  preload(i + 1); preload(i - 1);
+  $('sPg').textContent = (i + 1) + ' / ' + SLIDES;
+  $('sPrev').disabled = (i === 0);
+  $('sNext').disabled = (i === SLIDES - 1);
+  var d = $('sDots').children;
+  for (var k = 0; k < d.length; k++) d[k].className = (k === i ? 'on' : '');
+}
+$('sPrev').onclick = function () { showSlide(si - 1); };
+$('sNext').onclick = function () { showSlide(si + 1); };
+$('sDots').onclick = function (e) {
+  var t = e.target.getAttribute('data-i');
+  if (t !== null) showSlide(+t);
+};
+$('sImg').onclick = function () { openLb(si); };
+$('sToOrder').onclick = function () { go('vRoster'); };
+
+// 좌우로 밀어서 넘기기
+(function () {
+  var x0 = null, y0 = null;
+  var w = $('sImg');
+  w.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+  w.addEventListener('touchend', function (e) {
+    if (x0 === null) return;
+    var dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy)) { showSlide(si + (dx < 0 ? 1 : -1)); x0 = null; }
+    x0 = null;
+  }, { passive: true });
+})();
+
+// ===== 확대 보기 =====
+function fitScale() {
+  var b = $('lbBody'), im = $('lbImg');
+  var iw = im.clientWidth, ih = im.clientHeight;
+  if (!iw || !ih) return 1;
+  var cw = b.clientWidth - 12, ch = b.clientHeight - 12;
+  return (lbRot % 180 === 0) ? 1 : Math.max(1, Math.min(cw / ih, ch / iw));
+}
+function drawLb() {
+  var s = lbZoom * (lbRot % 180 === 0 ? 1 : fitScale());
+  $('lbImg').style.transform = 'rotate(' + lbRot + 'deg) scale(' + s + ')';
+  $('lbLv').textContent = Math.round(s * 100) + '%';
+}
+function openLb(i) {
+  lbZoom = 1; lbRot = 0;
+  $('lbImg').src = src(i);
+  $('lbPg').textContent = (i + 1) + ' / ' + SLIDES;
+  $('lb').className = 'lb on';
+  history.pushState({ v: cur, lb: 1 }, '');
+  $('lbImg').onload = drawLb;
+  drawLb();
+}
+function closeLb() { $('lb').className = 'lb'; }
+$('lbX').onclick = function () { history.back(); };
+$('lbIn').onclick = function () { lbZoom = Math.min(lbZoom + .25, 4); drawLb(); };
+$('lbOut').onclick = function () { lbZoom = Math.max(lbZoom - .25, 1); drawLb(); };
+$('lbRot').onclick = function () { lbRot = (lbRot + 90) % 360; lbZoom = 1; drawLb(); };
+
+// ===================================================================
+// 명단
+// ===================================================================
+function buildRoster() {
+  render('');
+  $('rSrch').oninput = function () { render(this.value.trim()); };
+}
+function render(q) {
+  var h = '', n = 0;
+  for (var i = 0; i < ROSTER.length; i++) {
+    var p = ROSTER[i];
+    if (q && p.name.indexOf(q) < 0) continue;
+    n++;
+    var done = ENTRIES[p.name];
+    h += '<button class="nm' + (picked && picked.name === p.name ? ' on' : '') + '" type="button" data-n="' + esc(p.name) + '">' +
+         esc(p.name) +
+         (p.part ? '<span class="pt">' + esc(p.part) + '파트</span>' : '') +
+         (done ? '<span class="done">입력완료</span>' : '') +
+         '</button>';
+  }
+  $('rList').innerHTML = n ? h : '<div class="empty">찾는 이름이 없습니다.<br>관리자에게 알려주세요.</div>';
+  var box = $('rList');
+  var bs = box.getElementsByClassName('nm');
+  for (var k = 0; k < bs.length; k++) {
+    bs[k].onclick = function () {
+      var nm = this.getAttribute('data-n');
+      for (var j = 0; j < ROSTER.length; j++) if (ROSTER[j].name === nm) picked = ROSTER[j];
+      render($('rSrch').value.trim());
+      $('rGo').disabled = false;
+      $('rGo').textContent = nm + ' — 주문 입력하기';
+    };
+  }
+}
+$('rGo').onclick = function () {
+  if (!picked) return;
+  openOrder();
+  go('vOrder');
+};
+
+// ===================================================================
+// 주문 입력
+// ===================================================================
+function openOrder() {
+  qty = {}; dirOpen = {};
+  var prev = ENTRIES[picked.name];
+  for (var i = 0; i < ITEMS.length; i++) {
+    qty[ITEMS[i].id] = prev ? (Number(prev.qty[ITEMS[i].id]) || 0) : 0;
+  }
+  var nt = $('oNotice');
+  if (closed) {
+    nt.style.display = 'block';
+    nt.style.background = '#FBEFEF'; nt.style.borderColor = '#EFC9C6'; nt.style.color = '#B42318';
+    nt.textContent = CONF['마감후문구'] || '선주문이 마감되었습니다.';
+  } else if (prev) {
+    nt.style.display = 'block';
+    nt.style.background = '#FBF3E4'; nt.style.borderColor = '#E8D6B0'; nt.style.color = '#7A5410';
+    nt.textContent = prev.savedAt + ' 에 이미 입력하셨습니다. 저장하면 그 내용이 바뀝니다.';
+  } else {
+    nt.style.display = 'none';
+  }
+  $('oErr').className = 'err';
+  $('oSave').disabled = closed;
+  $('oSave').textContent = closed ? '마감되었습니다' : '저장하기';
+  drawItems(); drawSum();
+}
+
+function steps(it) {
+  var a = [0], v = 0;
+  while (a.length < 5) {
+    v += it.unit;
+    if (it.max && v > it.max) break;
+    a.push(v);
+  }
+  return a;
+}
+
+function drawItems() {
+  var h = '';
+  for (var i = 0; i < ITEMS.length; i++) {
+    var it = ITEMS[i], n = qty[it.id] || 0;
+    var st = steps(it);
+    var onList = st.indexOf(n) > -1;
+
+    var qb = '';
+    for (var k = 0; k < st.length; k++) {
+      qb += '<button type="button" class="' + (n === st[k] ? 'on' : '') + '" data-id="' + it.id + '" data-q="' + st[k] + '">' + st[k] + '</button>';
+    }
+    if (it.direct) {
+      var dOn = dirOpen[it.id] || (!onList && n > 0);
+      qb += '<button type="button" class="dir' + (dOn ? ' on' : '') + '" data-dir="' + it.id + '">' +
+            (!onList && n > 0 ? n + '개' : '직접입력') + '</button>';
+    }
+
+    var price = n * it.price;
+    h += '<div class="item">' +
+      '<div class="bar"><span class="dia">◆</span><span class="nmx">' + esc(it.name) + '</span></div>' +
+      '<div class="meta"><div class="u">' + esc(it.line) + ' · ' + won(it.price) + '원 · ' +
+        (it.unit > 1 ? '<b>' + it.unit + '개 단위</b>' : '1개 단위') +
+        (it.list ? ' · <b>' + won(it.list - it.price) + '원 할인</b>' : '') +
+      '</div><div class="pr">' + (price ? won(price) + '원' : '—') + '</div></div>' +
+      '<div class="qty">' + qb + '</div>' +
+      dirPanel(it) +
+      giftBox(it, n) +
+      '</div>';
+  }
+  $('oItems').innerHTML = h;
+  bindItems();
+}
+
+function dirPanel(it) {
+  if (!it.direct) return '';
+  var n = qty[it.id] || 0;
+  var open = dirOpen[it.id] || (steps(it).indexOf(n) < 0 && n > 0);
+  return '<div class="dirp' + (open ? ' on' : '') + '" data-p="' + it.id + '">' +
+    '<div class="box"><div class="line">' +
+      '<button type="button" class="pm" data-m="' + it.id + '">−</button>' +
+      '<input type="number" inputmode="numeric" pattern="[0-9]*" data-in="' + it.id + '" value="' + n + '">' +
+      '<button type="button" class="pm" data-p2="' + it.id + '">＋</button>' +
+    '</div><div class="hint" data-h="' + it.id + '">' +
+      it.unit + '개 단위로' + (it.max ? ', 최대 ' + it.max + '개까지' : '') + ' 넣어주세요</div></div></div>';
+}
+
+function giftBox(it, n) {
+  var g = calcGift(it, n);
+  if (!n || !g.length) {
+    return '<div class="gift off"><div class="gh">받으시는 혜택</div>수량을 고르면 혜택이 여기에 나옵니다</div>';
+  }
+  var s = [];
+  for (var i = 0; i < g.length; i++) s.push(esc(g[i].name) + ' <b>' + g[i].qty + '개</b>');
+  var tail = '';
+  if (it.id === 'myeongjak' && n === 3) tail = '<br><span style="opacity:.75">3개 주문도 2개 구간 기준입니다</span>';
+  if (it.id === 'myeongjak' && n > 4)  tail = '<br><span style="opacity:.75">4개 이상은 구간이 같습니다</span>';
+  return '<div class="gift"><div class="gh">받으시는 혜택</div>' + s.join('<br>') + tail + '</div>';
+}
+
+// 서버(Code.gs calcGifts_)와 같은 규칙 — 구간은 가장 높은 기준 하나, 비례는 기준수량당 배수
+function calcGift(it, n) {
+  if (!n || n <= 0) return [];
+  var mine = [];
+  for (var i = 0; i < GIFTS.length; i++) if (GIFTS[i].item === it.id) mine.push(GIFTS[i]);
+  if (!mine.length) return [];
+  var out = [], seen = {};
+  function add(nm, q) {
+    if (q <= 0) return;
+    if (seen[nm] === undefined) { seen[nm] = out.length; out.push({ name: nm, qty: q }); }
+    else out[seen[nm]].qty += q;
+  }
+  if (mine[0].mode === '비례') {
+    for (var p = 0; p < mine.length; p++) add(mine[p].name, Math.floor(n / (mine[p].base || 1)) * mine[p].qty);
+  } else {
+    var hit = 0;
+    for (var b = 0; b < mine.length; b++) if (n >= mine[b].base && mine[b].base > hit) hit = mine[b].base;
+    if (!hit) return [];
+    for (var c = 0; c < mine.length; c++) if (mine[c].base === hit) add(mine[c].name, mine[c].qty);
+  }
+  return out;
+}
+
+function bindItems() {
+  var box = $('oItems');
+  var bs = box.querySelectorAll('.qty button[data-q]');
+  for (var i = 0; i < bs.length; i++) {
+    bs[i].onclick = function () {
+      var id = this.getAttribute('data-id');
+      qty[id] = +this.getAttribute('data-q');
+      dirOpen[id] = false;
+      drawItems(); drawSum();
+    };
+  }
+  var ds = box.querySelectorAll('button[data-dir]');
+  for (var k = 0; k < ds.length; k++) {
+    ds[k].onclick = function () {
+      var id = this.getAttribute('data-dir');
+      dirOpen[id] = !dirOpen[id];
+      drawItems(); drawSum();
+      if (dirOpen[id]) {
+        var inp = box.querySelector('input[data-in="' + id + '"]');
+        if (inp) { inp.focus(); inp.select(); }
+      }
+    };
+  }
+  var ms = box.querySelectorAll('button[data-m]');
+  for (var m = 0; m < ms.length; m++) ms[m].onclick = function () { bump(this.getAttribute('data-m'), -1); };
+  var ps = box.querySelectorAll('button[data-p2]');
+  for (var p = 0; p < ps.length; p++) ps[p].onclick = function () { bump(this.getAttribute('data-p2'), 1); };
+  var is = box.querySelectorAll('input[data-in]');
+  for (var n = 0; n < is.length; n++) {
+    is[n].oninput = function () { typed(this.getAttribute('data-in'), this.value); };
+  }
+}
+
+function itemOf(id) {
+  for (var i = 0; i < ITEMS.length; i++) if (ITEMS[i].id === id) return ITEMS[i];
+  return null;
+}
+function bump(id, dir) {
+  var it = itemOf(id);
+  var n = (qty[id] || 0) + dir * it.unit;
+  if (n < 0) n = 0;
+  if (it.max && n > it.max) { toast('최대 ' + it.max + '개까지 넣을 수 있습니다'); return; }
+  qty[id] = n; dirOpen[id] = true;
+  drawItems(); drawSum();
+}
+function typed(id, raw) {
+  var it = itemOf(id);
+  var hint = $('oItems').querySelector('[data-h="' + id + '"]');
+  var n = Number(raw);
+  if (raw === '') { qty[id] = 0; setHint(hint, it, ''); drawSum(); return; }
+  if (isNaN(n) || n !== Math.floor(n) || n < 0) { setHint(hint, it, '숫자만, 0 이상으로 넣어주세요'); qty[id] = -1; drawSum(); return; }
+  if (it.max && n > it.max)  { setHint(hint, it, '최대 ' + it.max + '개까지 넣을 수 있습니다'); qty[id] = -1; drawSum(); return; }
+  if (n % it.unit !== 0)     { setHint(hint, it, it.unit + '개 단위로 넣어주세요 (' + n + '개는 안 됩니다)'); qty[id] = -1; drawSum(); return; }
+  qty[id] = n; setHint(hint, it, '');
+  var gb = $('oItems').querySelectorAll('.item')[ITEMS.indexOf(it)].querySelector('.gift');
+  if (gb) gb.outerHTML = giftBox(it, n);
+  drawSum();
+}
+function setHint(el, it, msg) {
+  if (!el) return;
+  el.className = 'hint' + (msg ? ' bad' : '');
+  el.textContent = msg || (it.unit + '개 단위로' + (it.max ? ', 최대 ' + it.max + '개까지' : '') + ' 넣어주세요');
+}
+
+function drawSum() {
+  var h = '', tot = 0, bad = false;
+  for (var i = 0; i < ITEMS.length; i++) {
+    var it = ITEMS[i], n = qty[it.id];
+    if (n === -1) { bad = true; continue; }
+    if (!n) continue;
+    tot += n * it.price;
+    h += '<div class="r"><span>' + esc(it.name) + ' ' + n + '개</span><span>' + won(n * it.price) + '</span></div>';
+  }
+  if (!h) h = '<div class="r"><span>선택한 품목이 없습니다</span><span>0</span></div>';
+  h += '<div class="r tot"><span>주문 합계</span><span>' + won(tot) + '원</span></div>';
+  $('oSum').innerHTML = h;
+  $('oSave').disabled = closed || bad;
+  $('oSave').textContent = closed ? '마감되었습니다' : (bad ? '수량을 확인해주세요' : '저장하기');
+}
+
+// ===================================================================
+// 저장
+// ===================================================================
+$('oSave').onclick = function () {
+  if (closed) return;
+  var send = {};
+  for (var i = 0; i < ITEMS.length; i++) {
+    var n = qty[ITEMS[i].id];
+    if (n === -1) { showErr('수량을 다시 확인해주세요.'); return; }
+    send[ITEMS[i].id] = n || 0;
+  }
+  var btn = this;
+  btn.disabled = true; btn.textContent = '저장하는 중…';
+  $('oErr').className = 'err';
+
+  fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ name: picked.name, qty: send })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      btn.disabled = false; btn.textContent = '저장하기';
+      if (!d.ok) { showErr(d.error || '저장하지 못했습니다.'); return; }
+      ENTRIES[picked.name] = { savedAt: d.savedAt, qty: send };
+      showDone(d, send);
+      render($('rSrch').value.trim());
+      var cnt = Object.keys(ENTRIES).length;
+      $('gOrderSub').textContent = '명단 ' + ROSTER.length + '명 중 ' + cnt + '명 입력 · 본인을 고르고 수량을 넣습니다';
+      go('vDone');
+    })
+    .catch(function () {
+      btn.disabled = false; btn.textContent = '저장하기';
+      showErr('서버에 연결하지 못했습니다.\n\n잠시 후 다시 눌러주세요. 계속 안 되면 관리자에게 알려주세요.');
+    });
+};
+function showErr(m) {
+  var e = $('oErr'); e.textContent = m; e.className = 'err on';
+  e.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function showDone(d, send) {
+  $('dTitle').textContent = picked.name + ' 님, 저장했습니다';
+  $('dWhen').innerHTML = esc(d.savedAt) + ' 저장' + (d.updated ? ' (수정)' : '') + '<br>' +
+    esc(CONF['안내문구'] || '');
+
+  var h = '<p class="rt">주문 내역</p>';
+  for (var i = 0; i < ITEMS.length; i++) {
+    h += '<div class="r"><span>' + esc(ITEMS[i].name) + '</span><b>' + (send[ITEMS[i].id] || 0) + '개</b></div>';
+  }
+  h += '<div class="r tot"><span>주문 합계</span><b>' + won(d.total) + '원</b></div>';
+  $('dOrder').innerHTML = h;
+
+  var g = d.gifts || [];
+  if (!g.length) {
+    $('dGift').innerHTML = '<p class="rt">받으시는 판촉</p><div class="r"><span>주문 수량이 없어 판촉이 없습니다</span><b>—</b></div>';
+  } else {
+    var s = '<p class="rt">받으시는 판촉</p>';
+    for (var k = 0; k < g.length; k++) s += '<div class="r"><span>' + esc(g[k].name) + '</span><b>' + g[k].qty + '개</b></div>';
+    $('dGift').innerHTML = s;
+  }
+}
+
+// ===== 이동 =====
+$('gSlide').onclick = function () { go('vSlide'); };
+$('gOrder').onclick = function () { go('vRoster'); };
+$('dHome').onclick  = function () { picked = null; $('rGo').disabled = true; $('rGo').textContent = '본인을 선택해주세요'; $('rSrch').value = ''; render(''); paint('vMain'); history.pushState({ v: 'vMain' }, ''); };
+$('back').onclick   = function () { history.back(); };
+
+boot();
+</script>
+</body>
+</html>
