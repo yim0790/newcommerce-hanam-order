@@ -105,12 +105,26 @@ button{font-family:inherit;cursor:pointer}
 .nm{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);
     border-radius:10px;padding:9px 10px 9px 14px;margin-bottom:7px;font-size:15.5px;font-weight:600}
 .nm .nmn{flex:0 0 auto}
-.nm .cd{flex:0 0 auto;font-size:11px;color:#fff;font-weight:700;background:var(--bar);padding:2px 7px;border-radius:5px;letter-spacing:.3px}
+.nm .cd{flex:0 0 auto;color:var(--ink);font-weight:600;letter-spacing:.2px}
 .nm .pt{flex:0 0 auto;font-size:11.5px;color:var(--sub);font-weight:500;background:#EEF1F5;padding:2px 7px;border-radius:5px}
 .nm .done{flex:0 0 auto;font-size:11px;color:var(--gold);font-weight:700;background:#FBF3E4;padding:3px 7px;border-radius:5px}
 .nm .go{flex:0 0 auto;margin-left:auto;border:0;border-radius:8px;background:var(--act);color:#fff;
         font-size:13.5px;font-weight:700;padding:9px 14px;white-space:nowrap}
 .nm .go.re{background:#fff;color:var(--act);border:1.5px solid var(--act);padding:7.5px 12.5px}
+/* 좁은 화면(360px 등)에서 이름+코드+파트+입력완료+버튼이 한 줄에 들어가도록 여백만 줄인다 */
+@media (max-width:389px){
+  .nm{gap:5px;padding:9px 8px 9px 11px;font-size:14.5px}
+  .nm .pt,.nm .done{padding:2px 5px;font-size:11px}
+  .nm .go{padding:9px 10px;font-size:13px}
+  .nm .go.re{padding:7.5px 8.5px}
+}
+/* 320px 이하 구형 단말 */
+@media (max-width:339px){
+  .nm{gap:4px;padding:9px 6px 9px 9px;font-size:13.5px}
+  .nm .pt,.nm .done{padding:2px 4px;font-size:10px}
+  .nm .go{padding:8px 8px;font-size:12.5px}
+  .nm .go.re{padding:6.5px 6.5px}
+}
 .empty{text-align:center;color:var(--sub);font-size:14px;padding:26px 0}
 
 /* ===== 주문 입력 ===== */
@@ -517,7 +531,7 @@ function render(q) {
     var done = ENTRIES[p.code];
     h += '<div class="nm">' +
          '<span class="nmn">' + esc(p.name) + '</span>' +
-         (DUPNAME[p.name] ? '<span class="cd">' + esc(tail4(p.code)) + '</span>' : '') +
+         '<span class="cd">' + esc(p.code) + '</span>' +
          (p.part ? '<span class="pt">' + esc(p.part) + '파트</span>' : '') +
          (done ? '<span class="done">입력완료</span>' : '') +
          '<button class="go' + (done ? ' re' : '') + '" type="button" data-c="' + esc(p.code) + '">' +
