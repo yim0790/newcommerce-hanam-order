@@ -102,11 +102,14 @@ button{font-family:inherit;cursor:pointer}
 /* ===== 명단 ===== */
 .srch{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px 13px;font-size:15px;
       margin-bottom:10px;background:#fff;font-family:inherit}
-.nm{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);
-    border-radius:10px;padding:13px 14px;margin-bottom:7px;font-size:15.5px;font-weight:600;width:100%;text-align:left}
-.nm.on{border-color:var(--act);background:#F4F7FF;box-shadow:inset 0 0 0 1px var(--act)}
-.nm .pt{font-size:11.5px;color:var(--sub);font-weight:500;background:#EEF1F5;padding:2px 7px;border-radius:5px}
-.nm .done{margin-left:auto;font-size:11.5px;color:var(--gold);font-weight:700;background:#FBF3E4;padding:3px 8px;border-radius:5px}
+.nm{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);
+    border-radius:10px;padding:9px 10px 9px 14px;margin-bottom:7px;font-size:15.5px;font-weight:600}
+.nm .nmn{flex:0 0 auto}
+.nm .pt{flex:0 0 auto;font-size:11.5px;color:var(--sub);font-weight:500;background:#EEF1F5;padding:2px 7px;border-radius:5px}
+.nm .done{flex:0 0 auto;font-size:11px;color:var(--gold);font-weight:700;background:#FBF3E4;padding:3px 7px;border-radius:5px}
+.nm .go{flex:0 0 auto;margin-left:auto;border:0;border-radius:8px;background:var(--act);color:#fff;
+        font-size:13.5px;font-weight:700;padding:9px 14px;white-space:nowrap}
+.nm .go.re{background:#fff;color:var(--act);border:1.5px solid var(--act);padding:7.5px 12.5px}
 .empty{text-align:center;color:var(--sub);font-size:14px;padding:26px 0}
 
 /* ===== 주문 입력 ===== */
@@ -228,7 +231,6 @@ button{font-family:inherit;cursor:pointer}
       <input class="srch" id="rSrch" placeholder="이름 검색" autocomplete="off">
       <div id="rList"></div>
     </div>
-    <div class="ft"><button class="big" id="rGo" type="button" disabled>본인을 선택해주세요</button></div>
   </div>
 
   <!-- 주문 -->
@@ -500,30 +502,25 @@ function render(q) {
     if (q && p.name.indexOf(q) < 0) continue;
     n++;
     var done = ENTRIES[p.name];
-    h += '<button class="nm' + (picked && picked.name === p.name ? ' on' : '') + '" type="button" data-n="' + esc(p.name) + '">' +
-         esc(p.name) +
+    h += '<div class="nm">' +
+         '<span class="nmn">' + esc(p.name) + '</span>' +
          (p.part ? '<span class="pt">' + esc(p.part) + '파트</span>' : '') +
          (done ? '<span class="done">입력완료</span>' : '') +
-         '</button>';
+         '<button class="go' + (done ? ' re' : '') + '" type="button" data-n="' + esc(p.name) + '">' +
+         (done ? '수정' : '선주문') + '</button>' +
+         '</div>';
   }
   $('rList').innerHTML = n ? h : '<div class="empty">찾는 이름이 없습니다.<br>관리자에게 알려주세요.</div>';
-  var box = $('rList');
-  var bs = box.getElementsByClassName('nm');
+  var bs = $('rList').querySelectorAll('button[data-n]');
   for (var k = 0; k < bs.length; k++) {
     bs[k].onclick = function () {
       var nm = this.getAttribute('data-n');
       for (var j = 0; j < ROSTER.length; j++) if (ROSTER[j].name === nm) picked = ROSTER[j];
-      render($('rSrch').value.trim());
-      $('rGo').disabled = false;
-      $('rGo').textContent = nm + ' — 주문 입력하기';
+      openOrder();
+      go('vOrder');
     };
   }
 }
-$('rGo').onclick = function () {
-  if (!picked) return;
-  openOrder();
-  go('vOrder');
-};
 
 // ===================================================================
 // 주문 입력
@@ -789,7 +786,7 @@ function showDone(d, send) {
 // ===== 이동 =====
 $('gSlide').onclick = function () { go('vSlide'); };
 $('gOrder').onclick = function () { go('vRoster'); };
-$('dHome').onclick  = function () { picked = null; $('rGo').disabled = true; $('rGo').textContent = '본인을 선택해주세요'; $('rSrch').value = ''; render(''); paint('vMain'); history.pushState({ v: 'vMain' }, ''); };
+$('dHome').onclick  = function () { picked = null; $('rSrch').value = ''; render(''); paint('vMain'); history.pushState({ v: 'vMain' }, ''); };
 $('back').onclick   = function () { history.back(); };
 
 boot();
